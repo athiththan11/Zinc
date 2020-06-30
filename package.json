@@ -1,0 +1,38 @@
+{
+	"name": "zinc",
+	"version": "0.1.0",
+	"description": "A CLI Tool for Internal Knowledge Base",
+	"main": "index.js",
+	"directories": {
+		"example": "examples",
+		"lib": "lib"
+	},
+	"scripts": {
+		"lint": "eslint --ext .js --ignore-pattern public .",
+		"format": "prettier --trailing-comma es5 --no-semi --single-quote --write 'src/**/*js' 'src/**/*.md' 'lib/**/*.js'",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/athiththan11/Zinc.git"
+	},
+	"keywords": [
+		"zinc"
+	],
+	"author": "@athiththan11",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/athiththan11/Zinc/issues"
+	},
+	"homepage": "https://github.com/athiththan11/Zinc#readme",
+	"devDependencies": {
+		"eslint": "^7.3.1",
+		"jshint": "^2.11.1"
+	},
+	"dependencies": {
+		"chalk": "^4.1.0",
+		"lodash": "^4.17.15",
+		"marked": "^1.1.0",
+		"marked-terminal": "^4.1.0"
+	}
+}
