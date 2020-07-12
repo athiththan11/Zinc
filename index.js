@@ -1,16 +1,48 @@
-const fs = require('fs');
-const path = require('path');
+let argv = require('yargs')
+    // zi(sy)nc alias to sync the markdowns
+    .option('z', {
+        alias: 'zync',
+        describe: 'zi(sy)nc the memos',
+        type: 'boolean',
+        nargs: 0,
+    })
+    // search keyword
+    .option('k', {
+        alias: 'key',
+        describe: 'keyword to search through',
+        type: 'string',
+        nargs: 1,
+    })
+    // help
+    .help('help').argv;
 
-const parser = require('./lib/parser/markdown.parser');
-const { searchJSONObject } = require('./lib/searcher/json.searcher');
-const { writeToTerminal } = require('./lib/util');
+const ora = require('ora');
 
-var parsedContent = parser.parse(fs.readFileSync(path.join(__dirname, 'examples', 'assets', 'sample.md'), 'utf8'));
-// console.dir(parsedContent, { depth: 10 });
-// console.dir(searchJSONObject(parsedContent, 'keywords', 'say-how-are-you'), { depth: 10 });
-var result = searchJSONObject(parsedContent, 'keywords', 'say-how-are-you');
+const { parse } = require('./lib/parser');
+const { searchJSONObject } = require('./lib/searcher');
+const { readParsed, writeToTerminal } = require('./lib/util');
 
-// TODO: sketch a terminal output to show the K
-if (result.length > 0) {
-    console.log(writeToTerminal(result));
+if (argv.z) {
+    const spinner = ora('zi(sy)ncing markdown memos').start();
+    try {
+        parse(__dirname).then(() => {
+            if (spinner.isSpinning) spinner.succeed('zinced');
+        });
+    } catch (err) {
+        if (spinner.isSpinning) spinner.fail();
+    }
+}
+
+if (argv.k) {
+    const spinner = ora("searching for '" + argv.k + "'").start();
+    var parsedContent = readParsed(__dirname);
+    var results = searchJSONObject(parsedContent, 'keywords', argv.k);
+
+    if (!(results.length > 0)) {
+        if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.k + "'");
+        process.exit(0);
+    }
+
+    if (spinner.isSpinning) spinner.succeed("search results for '" + argv.k + "'");
+    console.log(writeToTerminal(results));
 }
