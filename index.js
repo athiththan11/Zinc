@@ -7,20 +7,29 @@ let argv = require('yargs')
         nargs: 0,
     })
     // search keyword
-    .option('k', {
-        alias: 'key',
+    .option('f', {
+        alias: 'find',
         describe: 'keyword to search through',
         type: 'string',
         nargs: 1,
+    })
+    // write zinc memo
+    .option('w', {
+        alias: 'write',
+        describe: 'write a memo',
+        type: 'boolean',
+        nargs: 0,
     })
     // help
     .help('help').argv;
 
 const ora = require('ora');
+// const prompt = require('prompt');
+const inquirer = require('inquirer');
 
 const { parse } = require('./lib/parser');
 const { searchJSONObject } = require('./lib/searcher');
-const { readParsed, writeToTerminal } = require('./lib/util');
+const { readMetaJSON, writeToTerminal, populateMemoMD } = require('./lib/util');
 
 if (argv.z) {
     const spinner = ora('zi(sy)ncing markdown memos').start();
@@ -33,16 +42,64 @@ if (argv.z) {
     }
 }
 
-if (argv.k) {
-    const spinner = ora("searching for '" + argv.k + "'").start();
-    var parsedContent = readParsed(__dirname);
-    var results = searchJSONObject(parsedContent, 'keywords', argv.k);
+if (argv.f) {
+    const spinner = ora("searching for '" + argv.f + "'").start();
+    var parsedContent = readMetaJSON(__dirname);
+    var results = searchJSONObject(parsedContent, 'keywords', argv.f);
 
     if (!(results.length > 0)) {
-        if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.k + "'");
+        if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.f + "'");
         process.exit(0);
     }
 
-    if (spinner.isSpinning) spinner.succeed("search results for '" + argv.k + "'");
+    if (spinner.isSpinning) spinner.succeed("search results for '" + argv.f + "'");
     console.log(writeToTerminal(results));
+}
+
+if (argv.w) {
+    // TODO: ask for input from the console and save it as memo
+
+    const promptSchema = [
+        {
+            name: 'title',
+            message: 'Title of the memo',
+        },
+        {
+            name: 'desc',
+            message: 'Description of the memo',
+        },
+        {
+            name: 'source',
+            message: 'Source',
+        },
+        {
+            name: 'keys',
+            message: 'Keywords (comma , separated)',
+        },
+        {
+            name: 'isCodeAvailable',
+            message: 'Code input available',
+            type: 'confirm',
+            default: true,
+        },
+        // {
+        //     name: 'code',
+        //     type: 'editor',
+        //     message: 'Code segment',
+        //     when: function (answers) {
+        //         return answers.isCodeAvailable;
+        //     },
+        // },
+    ];
+
+    inquirer.prompt(promptSchema).then((answers) => {
+        // console.info('  Title: ' + answers.title);
+        // console.info('  Description: ' + answers.desc);
+        // console.info('  Source: ' + answers.source);
+        // console.info('  Keywords: ' + answers.keys);
+        // console.info('  Code Available: ' + answers.isCodeAvailable);
+        // console.info('  Code: ' + answers.code);
+        console.dir(answers, { depth: 10 });
+        populateMemoMD(answers);
+    });
 }
