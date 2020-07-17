@@ -1,4 +1,4 @@
-# Sample Knowledge
+# Sample Zinc Memo
 
 ## Say Hello World
 
