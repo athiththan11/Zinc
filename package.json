@@ -1,7 +1,7 @@
 {
     "name": "zinc",
     "version": "0.1.0",
-    "description": "A CLI Tool for Internal Knowledge Base",
+    "description": "A command-line tool for (internal) memos",
     "main": "index.js",
     "directories": {
         "example": "examples",
