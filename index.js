@@ -1,4 +1,11 @@
 let argv = require('yargs')
+    // sink memo
+    .option('s', {
+        alias: 'sink',
+        describe: 'configure a location to sink the memos',
+        type: 'boolean',
+        nargs: 0,
+    })
     // zi(sy)nc alias to sync the markdowns
     .option('z', {
         alias: 'zync',
@@ -28,9 +35,20 @@ const inquirer = require('inquirer');
 
 const { parse } = require('./lib/parser');
 const { searchJSONObject } = require('./lib/searcher');
-const { readMetaJSON, writeToTerminal, populateMemoMD, appendZincMemo } = require('./lib/util');
+const {
+    configureZinc,
+    readMetaJSON,
+    writeToTerminal,
+    populateMemoMD,
+    appendZincMemo,
+    isZincConfigured,
+} = require('./lib/util');
 
 if (argv.z) {
+    if (!isZincConfigured(__dirname)) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
     const spinner = ora('zi(sy)ncing markdown memos').start();
     try {
         parse(__dirname).then(() => {
@@ -42,6 +60,10 @@ if (argv.z) {
 }
 
 if (argv.f) {
+    if (!isZincConfigured(__dirname)) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
     const spinner = ora("searching for '" + argv.f + "'").start();
     var parsedContent = readMetaJSON(__dirname);
     var results = searchJSONObject(parsedContent, 'keywords', argv.f);
@@ -56,6 +78,10 @@ if (argv.f) {
 }
 
 if (argv.w) {
+    if (!isZincConfigured(__dirname)) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
     const promptSchema = [
         {
             name: 'title',
@@ -98,5 +124,32 @@ if (argv.w) {
 
     inquirer.prompt(promptSchema).then((answers) => {
         appendZincMemo(populateMemoMD(answers), __dirname);
+    });
+}
+
+if (argv.s) {
+    const sinkChoices = ['Here', 'Provide a custom location', 'Use default location'];
+    const promptSchema = [
+        {
+            name: 'sink',
+            message: 'Where do you want to sink the memos?',
+            type: 'list',
+            choices: sinkChoices,
+        },
+        {
+            name: 'location',
+            message: 'Write me the location (absolute path)',
+            when: function (answers) {
+                return answers.sink === 'Provide a custom location';
+            },
+        },
+    ];
+
+    inquirer.prompt(promptSchema).then((answers) => {
+        if (answers.sink === sinkChoices[0]) answers.location = process.cwd();
+        if (answers.sink === sinkChoices[2]) answers.location = __dirname;
+
+        answers.dirname = __dirname;
+        configureZinc(answers);
     });
 }
