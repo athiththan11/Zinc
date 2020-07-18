@@ -45,14 +45,17 @@ const {
     isZincConfigured,
 } = require('./lib/util');
 
+var sinkPath = false;
+
 if (argv.z) {
-    if (!isZincConfigured(__dirname)) {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
         ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
         process.exit(0);
     }
     const spinner = ora('zi(sy)ncing markdown memos').start();
     try {
-        parse(__dirname).then(() => {
+        parse(sinkPath).then(() => {
             if (spinner.isSpinning) spinner.succeed('zinced');
         });
     } catch (err) {
@@ -61,12 +64,13 @@ if (argv.z) {
 }
 
 if (argv.f) {
-    if (!isZincConfigured(__dirname)) {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
         ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
         process.exit(0);
     }
     const spinner = ora("searching for '" + argv.f + "'").start();
-    var parsedContent = readMetaJSON(__dirname);
+    var parsedContent = readMetaJSON(sinkPath);
     var results = searchJSONObject(parsedContent, 'keywords', argv.f);
 
     if (results.length == 0) {
@@ -79,7 +83,8 @@ if (argv.f) {
 }
 
 if (argv.w) {
-    if (!isZincConfigured(__dirname)) {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
         ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
         process.exit(0);
     }
@@ -127,7 +132,8 @@ if (argv.w) {
     ];
 
     inquirer.prompt(promptSchema).then((answers) => {
-        appendZincMemo(populateMemoMD(answers), __dirname);
+        appendZincMemo(populateMemoMD(answers), sinkPath);
+        parse(sinkPath);
     });
 }
 
