@@ -32,6 +32,7 @@ let argv = require('yargs')
 
 const ora = require('ora');
 const inquirer = require('inquirer');
+const _ = require('lodash');
 
 const { parse } = require('./lib/parser');
 const { searchJSONObject } = require('./lib/searcher');
@@ -97,7 +98,10 @@ if (argv.w) {
         },
         {
             name: 'keys',
-            message: 'Keywords (comma , separated)',
+            message: 'Keywords (comma, separated)',
+            validate: function (keywords) {
+                return !_.isEmpty(keywords);
+            },
         },
         {
             name: 'isCodeAvailable',
