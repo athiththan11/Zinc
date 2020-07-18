@@ -1,8 +1,23 @@
 let argv = require('yargs')
+    .usage('Usage: $0 [flag]')
+    .example('$0 --sink', 'configure a sink location to store the memos')
+    .example(
+        '$0 --write',
+        'write a memo by providing a title, description, source (an external (URL) reference), and code/segment if exists'
+    )
+    .example('$0 --zync', 'sync the memos to find the memos using the keyword')
+    .example('$0 --find <keyword>', 'find a memo using the keyword')
     // sink memo
     .option('s', {
         alias: 'sink',
         describe: 'configure a location to sink the memos',
+        type: 'boolean',
+        nargs: 0,
+    })
+    // write zinc memo
+    .option('w', {
+        alias: 'write',
+        describe: 'write a memo',
         type: 'boolean',
         nargs: 0,
     })
@@ -19,13 +34,6 @@ let argv = require('yargs')
         describe: 'keyword to search through',
         type: 'string',
         nargs: 1,
-    })
-    // write zinc memo
-    .option('w', {
-        alias: 'write',
-        describe: 'write a memo',
-        type: 'boolean',
-        nargs: 0,
     })
     // help
     .help('help').argv;
