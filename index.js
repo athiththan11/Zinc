@@ -8,6 +8,7 @@ let argv = require('yargs')
     .example('$0 --zync', 'sync the memos to find the memos using the keyword')
     .example('$0 --find <keyword>', 'find a memo using the keyword')
     .example('$0 --remove <keyword>', 'remove a memo from zinc')
+    .example('$0 --update <keyword>', 'update/rewrite an existing memo')
     // sink memo
     .option('s', {
         alias: 'sink',
@@ -43,6 +44,13 @@ let argv = require('yargs')
         type: 'string',
         nargs: 1,
     })
+    // re-write memo
+    .option('u', {
+        alias: 'update',
+        describe: 'update/rewrite an existing memo',
+        type: 'string',
+        nargs: 1,
+    })
     // help
     .help('help').argv;
 
@@ -60,6 +68,7 @@ const {
     appendZincMemo,
     isZincConfigured,
     removeZincMemo,
+    constructInquirerObject,
 } = require('./lib/util');
 
 var sinkPath = false;
@@ -217,5 +226,128 @@ if (argv.r) {
             parse(sinkPath);
             ora().succeed('removed memo from zinc');
         }
+    });
+}
+
+if (argv.u) {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
+
+    const spinner = ora("searching for '" + argv.u + "'").start();
+    var metaContent = readMetaJSON(sinkPath);
+    var searchResults = searchJSONObject(metaContent, 'keywords', argv.u);
+
+    if (searchResults['resultObjects'].length == 0) {
+        if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.u + "'");
+        process.exit(0);
+    }
+
+    if (spinner.isSpinning) spinner.succeed("search results for '" + argv.u + "'");
+
+    var parentKey = searchResults['resultKeys'][0];
+    console.log(writeToTerminal(searchResults['resultObjects']));
+
+    var zincObject = constructInquirerObject(searchResults['resultObjects']);
+    const promptSchema = [
+        {
+            name: 'update',
+            message: 'Do you want to update/rewrite this memo?',
+            type: 'confirm',
+            default: true,
+        },
+        {
+            name: 'title',
+            message: 'Title of the memo',
+            default: zincObject['title'],
+            when: function (answers) {
+                return answers.update;
+            },
+        },
+        {
+            name: 'desc',
+            message: 'Description of the memo',
+            default: zincObject['desc'],
+            when: function (answers) {
+                return answers.update;
+            },
+        },
+        {
+            name: 'source',
+            message: 'Source',
+            default: zincObject['source'],
+            when: function (answers) {
+                return answers.update;
+            },
+        },
+        {
+            name: 'keys',
+            message: 'Keywords (comma, separated)',
+            default: zincObject['keys'],
+            when: function (answers) {
+                return answers.update;
+            },
+            validate: function (keywords) {
+                return !_.isEmpty(keywords);
+            },
+        },
+        {
+            name: 'isCodeAvailable',
+            message: 'Do you want to input a code?',
+            type: 'confirm',
+            default: true,
+            when: function (answers) {
+                return answers.update && _.isEmpty(zincObject.code);
+            },
+        },
+        {
+            name: 'updateExistingCode',
+            message: 'Do you want to update the existing code?',
+            type: 'confirm',
+            default: true,
+            when: function (answers) {
+                return answers.update && !_.isEmpty(zincObject.code);
+            },
+        },
+        {
+            name: 'lang',
+            message: 'Language',
+            default: zincObject['lang'],
+            when: function (answers) {
+                return (answers.isCodeAvailable || answers.updateExistingCode) && answers.update;
+            },
+        },
+        {
+            name: 'code',
+            type: 'editor',
+            message: 'Code segment',
+            default: zincObject['code'],
+            when: function (answers) {
+                return (answers.isCodeAvailable || answers.updateExistingCode) && answers.update;
+            },
+        },
+    ];
+
+    inquirer.prompt(promptSchema).then((answers) => {
+        if (!answers.update) {
+            ora().succeed('no updates were done');
+            process.exit(0);
+        }
+
+        // if not updating the existing code segment then, passing
+        // the existing code element from the zincObject
+        if (!answers.updateExistingCode) {
+            answers.isCodeAvailable = true;
+            answers.lang = zincObject.lang;
+            answers.code = zincObject.code;
+        }
+
+        removeZincMemo(parentKey, sinkPath);
+        appendZincMemo(populateMemoMD(answers), sinkPath);
+        parse(sinkPath);
+        ora().succeed('updated the memo successfully');
+        process.exit(0);
     });
 }
