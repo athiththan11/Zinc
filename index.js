@@ -28,6 +28,13 @@ let argv = require('yargs')
         type: 'boolean',
         nargs: 0,
     })
+    // remove memo
+    .option('r', {
+        alias: 'remove',
+        describe: 'remove a memo',
+        type: 'string',
+        nargs: 1,
+    })
     // search keyword
     .option('f', {
         alias: 'find',
@@ -51,6 +58,7 @@ const {
     populateMemoMD,
     appendZincMemo,
     isZincConfigured,
+    removeZincMemo,
 } = require('./lib/util');
 
 var sinkPath = false;
@@ -81,13 +89,13 @@ if (argv.f) {
     var parsedContent = readMetaJSON(sinkPath);
     var results = searchJSONObject(parsedContent, 'keywords', argv.f);
 
-    if (results.length == 0) {
+    if (results['resultObjects'].length == 0) {
         if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.f + "'");
         process.exit(0);
     }
 
     if (spinner.isSpinning) spinner.succeed("search results for '" + argv.f + "'");
-    console.log(writeToTerminal(results));
+    console.log(writeToTerminal(results['resultObjects']));
 }
 
 if (argv.w) {
@@ -169,5 +177,44 @@ if (argv.s) {
 
         answers.dirname = __dirname;
         configureZinc(answers);
+    });
+}
+
+if (argv.r) {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
+
+    const spinner = ora("searching for '" + argv.r + "'").start();
+    var metaContent = readMetaJSON(sinkPath);
+    var searchResults = searchJSONObject(metaContent, 'keywords', argv.r);
+
+    if (searchResults['resultObjects'].length == 0) {
+        if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.r + "'");
+        process.exit(0);
+    }
+
+    if (spinner.isSpinning) spinner.succeed("search results for '" + argv.r + "'");
+
+    var parentKey = searchResults['resultKeys'][0];
+    console.log(writeToTerminal(searchResults['resultObjects']));
+
+    const promptSchema = [
+        {
+            name: 'remove',
+            message: 'Remove this memo',
+            type: 'confirm',
+            default: true,
+        },
+    ];
+
+    inquirer.prompt(promptSchema).then((answers) => {
+        if (answers.remove) {
+            removeZincMemo(parentKey, sinkPath);
+            parse(sinkPath);
+            ora().succeed('removed memo from zinc');
+        }
     });
 }
