@@ -30,6 +30,7 @@ A command-line tool to sink and find memos (a.k.a notes) on the fly from your fa
   - [`--zync` memos](#--zync-memos)
   - [`--find` memos](#--find-memos)
   - [`--remove` memo](#--remove-memo)
+  - [`--update` memo](#--update-memo)
 - [License](#license)
 
 <br />
@@ -77,6 +78,7 @@ Options:
   -z, --zync    zi(sy)nc the memos                                     [boolean]
   -r, --remove  remove a memo                                           [string]
   -f, --find    keyword to search through                               [string]
+  -u, --update  update/rewrite an existing memo                         [string]
   --help        Show help                                              [boolean]
 
 Examples:
@@ -87,6 +89,7 @@ Examples:
   zinc --zync              sync the memos to find the memos using the keyword
   zinc --find <keyword>    find a memo using the keyword
   zinc --remove <keyword>  remove a memo from zinc
+  zinc --update <keyword>  update/rewrite an existing memo
 ```
 
 ### `--sink` memos
@@ -127,6 +130,14 @@ The `--remove` flag is used to search and remove an existing memo from the `Zinc
 
 ```sh
 zinc --remove <keyword>
+```
+
+### `--update` memo
+
+The `--update` flag is used to search and update/re-write and existing memo in the `Zinc`.
+
+```sh
+zinc --update <keyword>
 ```
 
 ## License
