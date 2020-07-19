@@ -29,8 +29,8 @@ A command-line tool to sink and find memos (a.k.a notes) on the fly from your fa
   - [`--write` memos](#--write-memos)
   - [`--zync` memos](#--zync-memos)
   - [`--find` memos](#--find-memos)
-  - [`--remove` memo](#--remove-memo)
   - [`--update` memo](#--update-memo)
+  - [`--remove` memo](#--remove-memo)
 - [License](#license)
 
 <br />
@@ -76,9 +76,9 @@ Options:
   -s, --sink    configure a location to sink the memos                 [boolean]
   -w, --write   write a memo                                           [boolean]
   -z, --zync    zi(sy)nc the memos                                     [boolean]
-  -r, --remove  remove a memo                                           [string]
   -f, --find    keyword to search through                               [string]
   -u, --update  update/rewrite an existing memo                         [string]
+  -r, --remove  remove a memo                                           [string]
   --help        Show help                                              [boolean]
 
 Examples:
@@ -88,8 +88,8 @@ Examples:
                            code/segment if exists
   zinc --zync              sync the memos to find the memos using the keyword
   zinc --find <keyword>    find a memo using the keyword
-  zinc --remove <keyword>  remove a memo from zinc
   zinc --update <keyword>  update/rewrite an existing memo
+  zinc --remove <keyword>  remove a memo from zinc
 ```
 
 ### `--sink` memos
@@ -124,20 +124,20 @@ The `--find` flag is used to search through the memos using the prompted keyword
 zinc --find <keyword>
 ```
 
-### `--remove` memo
-
-The `--remove` flag is used to search and remove an existing memo from the `Zinc`.
-
-```sh
-zinc --remove <keyword>
-```
-
 ### `--update` memo
 
 The `--update` flag is used to search and update/re-write and existing memo in the `Zinc`.
 
 ```sh
 zinc --update <keyword>
+```
+
+### `--remove` memo
+
+The `--remove` flag is used to search and remove an existing memo from the `Zinc`.
+
+```sh
+zinc --remove <keyword>
 ```
 
 ## License
