@@ -7,6 +7,7 @@ let argv = require('yargs')
     )
     .example('$0 --zync', 'sync the memos to find the memos using the keyword')
     .example('$0 --find <keyword>', 'find a memo using the keyword')
+    .example('$0 --remove <keyword>', 'remove a memo from zinc')
     // sink memo
     .option('s', {
         alias: 'sink',
