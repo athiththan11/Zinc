@@ -29,6 +29,7 @@ A command-line tool to sink and find memos (a.k.a notes) on the fly from your fa
   - [`--write` memos](#--write-memos)
   - [`--zync` memos](#--zync-memos)
   - [`--find` memos](#--find-memos)
+  - [`--remove` memo](#--remove-memo)
 - [License](#license)
 
 <br />
@@ -67,13 +68,25 @@ zinc --version
 ## Commands & Usages
 
 ```sh
+Usage: zinc [flag]
+
 Options:
-  --version    Show version number                                     [boolean]
-  -s, --sink   configure a location to sink the memos                  [boolean]
-  -z, --zync   zi(sy)nc the memos                                      [boolean]
-  -f, --find   keyword to search through                                [string]
-  -w, --write  write a memo                                            [boolean]
-  --help       Show help                                               [boolean]
+  --version     Show version number                                    [boolean]
+  -s, --sink    configure a location to sink the memos                 [boolean]
+  -w, --write   write a memo                                           [boolean]
+  -z, --zync    zi(sy)nc the memos                                     [boolean]
+  -r, --remove  remove a memo                                           [string]
+  -f, --find    keyword to search through                               [string]
+  --help        Show help                                              [boolean]
+
+Examples:
+  zinc --sink              configure a sink location to store the memos
+  zinc --write             write a memo by providing a title, description,
+                           source (an external (URL) reference), and
+                           code/segment if exists
+  zinc --zync              sync the memos to find the memos using the keyword
+  zinc --find <keyword>    find a memo using the keyword
+  zinc --remove <keyword>  remove a memo from zinc
 ```
 
 ### `--sink` memos
@@ -102,10 +115,18 @@ zinc --zync
 
 ### `--find` memos
 
-The `--find` flags is used to search through the memos using the prompted keywords. `Zinc` uses the meta JSON to traverse through and find the matching memos with the given keyword.
+The `--find` flag is used to search through the memos using the prompted keywords. `Zinc` uses the meta JSON to traverse through and find the matching memos with the given keyword.
 
 ```sh
 zinc --find <keyword>
+```
+
+### `--remove` memo
+
+The `--remove` flag is used to search and remove an existing memo from the `Zinc`.
+
+```sh
+zinc --remove <keyword>
 ```
 
 ## License
