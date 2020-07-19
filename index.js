@@ -7,8 +7,8 @@ let argv = require('yargs')
     )
     .example('$0 --zync', 'sync the memos to find the memos using the keyword')
     .example('$0 --find <keyword>', 'find a memo using the keyword')
-    .example('$0 --remove <keyword>', 'remove a memo from zinc')
     .example('$0 --update <keyword>', 'update/rewrite an existing memo')
+    .example('$0 --remove <keyword>', 'remove a memo from zinc')
     // sink memo
     .option('s', {
         alias: 'sink',
@@ -30,13 +30,6 @@ let argv = require('yargs')
         type: 'boolean',
         nargs: 0,
     })
-    // remove memo
-    .option('r', {
-        alias: 'remove',
-        describe: 'remove a memo',
-        type: 'string',
-        nargs: 1,
-    })
     // search keyword
     .option('f', {
         alias: 'find',
@@ -44,10 +37,17 @@ let argv = require('yargs')
         type: 'string',
         nargs: 1,
     })
-    // re-write memo
+    // update memo
     .option('u', {
         alias: 'update',
         describe: 'update/rewrite an existing memo',
+        type: 'string',
+        nargs: 1,
+    })
+    // remove memo
+    .option('r', {
+        alias: 'remove',
+        describe: 'remove a memo',
         type: 'string',
         nargs: 1,
     })
@@ -61,24 +61,28 @@ const _ = require('lodash');
 const { parse } = require('./lib/parser');
 const { searchJSONObject } = require('./lib/searcher');
 const {
-    configureZinc,
-    readMetaJSON,
-    writeToTerminal,
-    populateMemoMD,
     appendZincMemo,
-    isZincConfigured,
-    removeZincMemo,
+    configureZinc,
     constructInquirerObject,
+    isZincConfigured,
+    populateMemoMD,
+    readMetaJSON,
+    removeZincMemo,
+    writeToTerminal,
 } = require('./lib/util');
 
 var sinkPath = false;
+var parsedContent, results, parentKey;
 
 if (argv.z) {
-    sinkPath = isZincConfigured(__dirname);
-    if (!sinkPath) {
-        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
-        process.exit(0);
-    }
+    /**
+     * code block handling the `zync` flag
+     * * checks whether the zinc is configured with a sink location
+     * * reads the md content and parse to the meta JSON
+     */
+
+    isSinkConfigured();
+
     const spinner = ora('zi(sy)ncing markdown memos').start();
     try {
         parse(sinkPath).then(() => {
@@ -90,14 +94,19 @@ if (argv.z) {
 }
 
 if (argv.f) {
-    sinkPath = isZincConfigured(__dirname);
-    if (!sinkPath) {
-        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
-        process.exit(0);
-    }
+    /**
+     * code block handling the `find` flag
+     * * checks whether the zinc is configured with a sink location
+     * * reads the meta JSON content
+     * * searches through the JSON with the defined keyword
+     * * search result is printed in the terminal as a structured output
+     */
+
+    isSinkConfigured();
+
     const spinner = ora("searching for '" + argv.f + "'").start();
-    var parsedContent = readMetaJSON(sinkPath);
-    var results = searchJSONObject(parsedContent, 'keywords', argv.f);
+    parsedContent = readMetaJSON(sinkPath);
+    results = searchJSONObject(parsedContent, 'keywords', argv.f);
 
     if (results['resultObjects'].length == 0) {
         if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.f + "'");
@@ -109,11 +118,17 @@ if (argv.f) {
 }
 
 if (argv.w) {
-    sinkPath = isZincConfigured(__dirname);
-    if (!sinkPath) {
-        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
-        process.exit(0);
-    }
+    /**
+     * code block handling the `write` flag
+     * * checks whether the zinc is configured with a sink location
+     * * prompts for input using the inquirer lib
+     * * once the inputs are recorded, the object is parsed to populate a markdown content
+     * * the content is added to the zinc.md
+     * * the meta JSON is updated
+     */
+
+    isSinkConfigured();
+
     const promptSchema = [
         {
             name: 'title',
@@ -164,6 +179,13 @@ if (argv.w) {
 }
 
 if (argv.s) {
+    /**
+     * code block handling the `sink` flag
+     * * prompts the user to select a sink location with choices
+     * * once the input is recorded, the object is passed to configure the Zinc
+     * * a .zincrc is created and the configurations are recorded
+     */
+
     const sinkChoices = ['Here', 'Provide a custom location', 'Use default location'];
     const promptSchema = [
         {
@@ -176,7 +198,7 @@ if (argv.s) {
             name: 'location',
             message: 'Write me the location (absolute path)',
             when: function (answers) {
-                return answers.sink === 'Provide a custom location';
+                return answers.sink === sinkChoices[1];
             },
         },
     ];
@@ -191,25 +213,32 @@ if (argv.s) {
 }
 
 if (argv.r) {
-    sinkPath = isZincConfigured(__dirname);
-    if (!sinkPath) {
-        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
-        process.exit(0);
-    }
+    /**
+     * code block handling the `remove` flag
+     * * checks whether the zinc is configured with a sink location
+     * * reads the meta JSON content
+     * * searches through the JSON with the defined keyword
+     * * search result is printed in the terminal as a structured output
+     * * along with the output, question is asked to whether remove or not
+     * * once the input is recorded by the inquirer lib removes the content from the zinc.md
+     * * updates the meta JSON
+     */
+
+    isSinkConfigured();
 
     const spinner = ora("searching for '" + argv.r + "'").start();
-    var metaContent = readMetaJSON(sinkPath);
-    var searchResults = searchJSONObject(metaContent, 'keywords', argv.r);
+    parsedContent = readMetaJSON(sinkPath);
+    results = searchJSONObject(parsedContent, 'keywords', argv.r);
 
-    if (searchResults['resultObjects'].length == 0) {
+    if (results['resultObjects'].length == 0) {
         if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.r + "'");
         process.exit(0);
     }
 
     if (spinner.isSpinning) spinner.succeed("search results for '" + argv.r + "'");
 
-    var parentKey = searchResults['resultKeys'][0];
-    console.log(writeToTerminal(searchResults['resultObjects']));
+    parentKey = results['resultKeys'][0];
+    console.log(writeToTerminal(results['resultObjects']));
 
     const promptSchema = [
         {
@@ -224,33 +253,43 @@ if (argv.r) {
         if (answers.remove) {
             removeZincMemo(parentKey, sinkPath);
             parse(sinkPath);
-            ora().succeed('removed memo from zinc');
+            ora().succeed('removed the memo from zinc successfully!');
         }
     });
 }
 
 if (argv.u) {
-    sinkPath = isZincConfigured(__dirname);
-    if (!sinkPath) {
-        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
-        process.exit(0);
-    }
+    /**
+     * code block handling the `update` flag
+     * * checks whether the zinc is configured with a sink location
+     * * reads the meta JSON content
+     * * searches through the JSON with the defined keyword
+     * * search result is printed in the terminal as a structured output
+     * * along with the output, question is asked to whether update or not
+     * * if yes, the inquirer prompts the set of questions of with the previously set values
+     * * once the input is recorded by the inquirer lib, the final object is constructed
+     * * the existing content is removed from the zinc.md
+     * * the updated content is written to the zinc.md
+     * * the meta JSON is updated
+     */
+
+    isSinkConfigured();
 
     const spinner = ora("searching for '" + argv.u + "'").start();
-    var metaContent = readMetaJSON(sinkPath);
-    var searchResults = searchJSONObject(metaContent, 'keywords', argv.u);
+    parsedContent = readMetaJSON(sinkPath);
+    results = searchJSONObject(parsedContent, 'keywords', argv.u);
 
-    if (searchResults['resultObjects'].length == 0) {
+    if (results['resultObjects'].length == 0) {
         if (spinner.isSpinning) spinner.fail("no matching results found for '" + argv.u + "'");
         process.exit(0);
     }
 
     if (spinner.isSpinning) spinner.succeed("search results for '" + argv.u + "'");
 
-    var parentKey = searchResults['resultKeys'][0];
-    console.log(writeToTerminal(searchResults['resultObjects']));
+    parentKey = results['resultKeys'][0];
+    console.log(writeToTerminal(results['resultObjects']));
 
-    var zincObject = constructInquirerObject(searchResults['resultObjects']);
+    var zincObject = constructInquirerObject(results['resultObjects']);
     const promptSchema = [
         {
             name: 'update',
@@ -332,7 +371,7 @@ if (argv.u) {
 
     inquirer.prompt(promptSchema).then((answers) => {
         if (!answers.update) {
-            ora().succeed('no updates were done');
+            ora().succeed('no updates were done to the memo');
             process.exit(0);
         }
 
@@ -347,7 +386,19 @@ if (argv.u) {
         removeZincMemo(parentKey, sinkPath);
         appendZincMemo(populateMemoMD(answers), sinkPath);
         parse(sinkPath);
-        ora().succeed('updated the memo successfully');
+        ora().succeed(`updated the memo successfully!`);
         process.exit(0);
     });
 }
+
+//#region helpers
+
+function isSinkConfigured() {
+    sinkPath = isZincConfigured(__dirname);
+    if (!sinkPath) {
+        ora().fail('zinc is not configured properly. please execute `zinc -s` to configure');
+        process.exit(0);
+    }
+}
+
+//#endregion
