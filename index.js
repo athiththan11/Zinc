@@ -9,6 +9,7 @@ let argv = require('yargs')
     .example('$0 --find <keyword>', 'find a memo using the keyword')
     .example('$0 --update <keyword>', 'update/rewrite an existing memo')
     .example('$0 --remove <keyword>', 'remove a memo from zinc')
+    .example('$0 --list', 'list all memos')
     // sink memo
     .option('s', {
         alias: 'sink',
@@ -51,12 +52,20 @@ let argv = require('yargs')
         type: 'string',
         nargs: 1,
     })
+    // list memo
+    .option('l', {
+        alias: 'list',
+        describe: 'list all memos',
+        type: 'boolean',
+        nargs: 0,
+    })
     // help
     .help('help').argv;
 
 const ora = require('ora');
 const inquirer = require('inquirer');
 const _ = require('lodash');
+const { JSONPath } = require('jsonpath-plus');
 
 const { parse } = require('./lib/parser');
 const { searchJSONObject } = require('./lib/searcher');
@@ -69,6 +78,7 @@ const {
     readMetaJSON,
     removeZincMemo,
     writeToTerminal,
+    writeListToTerminal,
 } = require('./lib/util');
 
 var sinkPath = false;
@@ -389,6 +399,29 @@ if (argv.u) {
         ora().succeed(`updated the memo successfully!`);
         process.exit(0);
     });
+}
+
+if (argv.l) {
+    /**
+     * code block handling the `list` flag
+     * * checks whether the zinc is configured with a sink location
+     * * reads the meta JSON content
+     * * prints the list in the terminal as a structured output
+     */
+
+    isSinkConfigured();
+
+    const spinner = ora('preparing the list').start();
+    parsedContent = readMetaJSON(sinkPath);
+    results = JSONPath({ path: '$..[?(@.title)]', json: parsedContent });
+
+    if (results.length == 0) {
+        if (spinner.isSpinning) spinner.fail('no memos found');
+        process.exit(0);
+    }
+
+    if (spinner.isSpinning) spinner.succeed('list prepared');
+    console.log(writeListToTerminal(results));
 }
 
 //#region helpers
