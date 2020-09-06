@@ -18,6 +18,10 @@ A command-line tool to sink and find memos (a.k.a notes) on the fly from your fa
 
 <br />
 
+![Zinc Gif](assets/zinc.gif)
+
+<br />
+
 ## Contents
 
 - [Contents](#contents)
