@@ -1,6 +1,6 @@
 {
     "name": "zinc",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "A command-line tool for (internal) memos",
     "main": "index.js",
     "directories": {
